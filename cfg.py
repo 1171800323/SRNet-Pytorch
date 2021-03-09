@@ -1,5 +1,5 @@
 # device
-gpu = 'cuda:1'
+gpu = 'cuda:2'
 
 # pretrained vgg
 vgg19_weights = 'model_logs/vgg19/vgg19-dcbb9e9d.pth'
@@ -17,18 +17,19 @@ epsilon = 1e-8
 
 # train
 learning_rate = 1e-4
-b_lr = 1e-5
-t_lr = 1e-4
-f_lr = 1e-4
 decay_rate = 0.9
-decay_steps = 10000
 beta1 = 0.9
 beta2 = 0.999
 max_iter = 500000
 show_loss_interval = 50
 write_log_interval = 50
-save_ckpt_interval = 50000
+save_ckpt_interval = 1000
 gen_example_interval = 1000
+
+b_lr = 1e-5
+t_lr = 1e-4
+f_lr = 1e-4
+decay_steps = 10000
 
 train_name = None
 checkpoint_save_dir = 'model_logs/checkpoints'

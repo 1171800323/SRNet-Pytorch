@@ -152,12 +152,12 @@ class TextConversionNet(nn.Module):
                                        ResNet(256))
         self.s_encoder = nn.Sequential(EncoderNet(in_dim),
                                        ResNet(256))
-        self.sk_decoder = nn.Sequential(DecoderNet(2 * 256),
-                                        nn.Conv2d(32, 1, kernel_size=3, padding=1),
-                                        nn.Sigmoid())
+        self.sk_decoder = DecoderNet(2 * 256)
+        self.sk_out = nn.Sequential(nn.Conv2d(32, 1, kernel_size=3, padding=1),
+                                    nn.Sigmoid())
         self.t_decoder = DecoderNet(2 * 256)
-        self.t_conv = conv_bn_relu(32 + 1, 32 + 1)
-        self.last = nn.Sequential(nn.Conv2d(32 + 1, 3, kernel_size=3, padding=1),
+        self.t_conv = conv_bn_relu(64, 64)
+        self.last = nn.Sequential(nn.Conv2d(64, 3, kernel_size=3, padding=1),
                                   nn.Tanh())
 
     def forward(self, x_t, x_s):
@@ -173,7 +173,7 @@ class TextConversionNet(nn.Module):
 
         out_t = self.t_conv(out_t)
 
-        return out_sk, self.last(out_t)
+        return self.sk_out(out_sk), self.last(out_t)
 
 
 class BackgroundInpaintingNet(nn.Module):
@@ -248,7 +248,6 @@ class Discriminator(nn.Module):
     def __init__(self, in_dim=6):
         super(Discriminator, self).__init__()
         self.conv1 = nn.Sequential(nn.Conv2d(in_dim, 64, kernel_size=3, stride=2, padding=1),
-                                   nn.BatchNorm2d(64),
                                    nn.LeakyReLU())
         self.conv2 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),
                                    nn.BatchNorm2d(128),
@@ -282,7 +281,8 @@ class SNDiscriminator(nn.Module):
                                    nn.LeakyReLU())
         self.conv4 = nn.Sequential(SpectralNorm(nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1)),
                                    nn.LeakyReLU())
-        self.conv5 = nn.Sequential(nn.Conv2d(512, 1, kernel_size=3, stride=1, padding=1))
+        self.conv5 = nn.Sequential(nn.Conv2d(512, 1, kernel_size=3, stride=1, padding=1),
+                                   nn.Sigmoid())
 
     def forward(self, x):
         out = self.conv1(x)

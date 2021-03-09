@@ -154,23 +154,24 @@ class Trainer:
 
         i_t, i_s, to_shape = pre_process_img(i_s, i_t, to_shape)
 
-        o_sk, o_t, o_b, o_f = self.G([i_t.to(device), i_s.to(device)])
+        with torch.no_grad():
+            o_sk, o_t, o_b, o_f = self.G([i_t.to(device), i_s.to(device)])
 
-        o_sk = o_sk.data.cpu()
-        o_t = o_t.data.cpu()
-        o_b = o_b.data.cpu()
-        o_f = o_f.data.cpu()
+            o_sk = o_sk.data.cpu()
+            o_t = o_t.data.cpu()
+            o_b = o_b.data.cpu()
+            o_f = o_f.data.cpu()
 
-        transpose_vector = [0, 2, 3, 1]
-        o_sk = o_sk.permute(transpose_vector).numpy()
-        o_t = o_t.permute(transpose_vector).numpy()
-        o_b = o_b.permute(transpose_vector).numpy()
-        o_f = o_f.permute(transpose_vector).numpy()
+            transpose_vector = [0, 2, 3, 1]
+            o_sk = o_sk.permute(transpose_vector).numpy()
+            o_t = o_t.permute(transpose_vector).numpy()
+            o_b = o_b.permute(transpose_vector).numpy()
+            o_f = o_f.permute(transpose_vector).numpy()
 
-        o_sk = cv2.resize((o_sk[0] * 255.).astype(np.uint8), to_shape, interpolation=cv2.INTER_NEAREST)
-        o_t = cv2.resize(((o_t[0] + 1.) * 127.5).astype(np.uint8), to_shape)
-        o_b = cv2.resize(((o_b[0] + 1.) * 127.5).astype(np.uint8), to_shape)
-        o_f = cv2.resize(((o_f[0] + 1.) * 127.5).astype(np.uint8), to_shape)
+            o_sk = cv2.resize((o_sk[0] * 255.).astype(np.uint8), to_shape, interpolation=cv2.INTER_NEAREST)
+            o_t = cv2.resize(((o_t[0] + 1.) * 127.5).astype(np.uint8), to_shape)
+            o_b = cv2.resize(((o_b[0] + 1.) * 127.5).astype(np.uint8), to_shape)
+            o_f = cv2.resize(((o_f[0] + 1.) * 127.5).astype(np.uint8), to_shape)
 
         return [o_sk, o_t, o_b, o_f]
 

@@ -22,7 +22,7 @@ class BackgroundInpaintingTrainer:
         self.g_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.g_optimizer,
                                                                   (cfg.decay_rate ** (1 / cfg.decay_steps)))
         self.D = SNDiscriminator().to(device)
-        self.d_optimizer = torch.optim.Adam(self.D.parameters(), lr=cfg.learning_rate)
+        self.d_optimizer = torch.optim.Adam(self.D.parameters(), lr=0.2 * cfg.learning_rate)
         self.d_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.d_optimizer,
                                                                   (cfg.decay_rate ** (1 / cfg.decay_steps)))
 
