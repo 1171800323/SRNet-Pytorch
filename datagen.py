@@ -56,6 +56,7 @@ def srnet_datagen(data_dir=cfg.data_dir):
         to_w = w_sum // cfg.batch_size
         to_w = int(round(to_w / 8)) * 8
         to_scale = (to_w, to_h)  # cv2.resize目标尺寸参数是：[w, h]
+
         for i in range(cfg.batch_size):
             i_t_batch[i] = cv2.resize(i_t_batch[i], to_scale)
             i_s_batch[i] = cv2.resize(i_s_batch[i], to_scale)

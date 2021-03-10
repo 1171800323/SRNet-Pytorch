@@ -1,5 +1,5 @@
 # device
-gpu = 'cuda:2'
+gpu = 'cuda:3'
 
 # pretrained vgg
 vgg19_weights = 'model_logs/vgg19/vgg19-dcbb9e9d.pth'

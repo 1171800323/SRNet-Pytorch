@@ -3,8 +3,7 @@ import torch
 import cfg
 
 
-def build_discriminator_loss(x):
-    x_true, x_pred = torch.chunk(x, 2)
+def build_discriminator_loss(x_true, x_pred):
     d_loss = -torch.mean(torch.log(torch.clamp(x_true, cfg.epsilon, 1.0))
                          + torch.log(torch.clamp(1.0 - x_pred, cfg.epsilon, 1.0)))
 
@@ -29,8 +28,7 @@ def build_l1_loss(x_t, x_o):
     return torch.mean(torch.abs(x_t - x_o))
 
 
-def build_gan_loss(x):
-    x_true, x_pred = torch.chunk(x, 2)
+def build_gan_loss(x_pred):
 
     return -torch.mean(torch.log(torch.clamp(x_pred, cfg.epsilon, 1.0)))
 
@@ -111,7 +109,7 @@ def build_l_f_loss(o_df, o_f, o_vgg, t_f):
 
 def build_generator_loss(out_g, out_d, labels, out_vgg):
     o_sk, o_t, o_b, o_f, mask_t = out_g
-    o_db, o_df = out_d
+    o_db_pred, o_df_pred = out_d
     o_vgg = out_vgg
     t_sk, t_t, t_b, t_f = labels
 
@@ -119,11 +117,11 @@ def build_generator_loss(out_g, out_d, labels, out_vgg):
     l_t_l1 = build_l1_loss_with_mask(t_t, o_t, mask_t)
     l_t = l_t_l1 + l_t_sk
 
-    l_b_gan = build_gan_loss(o_db)
+    l_b_gan = build_gan_loss(o_db_pred)
     l_b_l1 = cfg.lb_beta * build_l1_loss(t_b, o_b)
     l_b = l_b_gan + l_b_l1
 
-    l_f_gan = build_gan_loss(o_df)
+    l_f_gan = build_gan_loss(o_df_pred)
     l_f_l1 = cfg.lf_theta_1 * build_l1_loss(t_f, o_f)
     l_f_vgg_per, l_f_vgg_style = build_vgg_loss(o_vgg)
     l_f_vgg_per = cfg.lf_theta_2 * l_f_vgg_per
