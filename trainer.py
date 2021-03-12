@@ -1,6 +1,7 @@
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from datagen import srnet_datagen, get_input_data
+from datagen import get_input_data, datagen_srnet, collate_fn
 from loss import build_discriminator_loss, build_generator_loss
 from model import Generator, Vgg19, Discriminator
 from utils import *
@@ -15,7 +16,9 @@ def clip_grad(model):
 
 class Trainer:
     def __init__(self):
-        self.data_iter = srnet_datagen()
+        self.data_iter = iter(DataLoader(dataset=datagen_srnet(), batch_size=cfg.batch_size,
+                                         shuffle=True, collate_fn=collate_fn, pin_memory=True,
+                                         num_workers=4))
 
         self.vgg19 = Vgg19().to(device)
 
