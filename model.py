@@ -209,23 +209,6 @@ class FusionNet(nn.Module):
         return self.last(out)
 
 
-# class NewFusionNet(nn.Module):
-#     def __init__(self, in_dim=6):
-#         super(NewFusionNet, self).__init__()
-#         self.encoder = EncoderNet(in_dim)
-#         self.resnet = ResNet(256)
-#         self.decoder = DecoderNet(256)
-#         self.last = nn.Sequential(nn.Conv2d(32, 3, kernel_size=3, padding=1),
-#                                   nn.Tanh())
-#
-#     def forward(self, t_t, t_b):
-#         out = torch.cat([t_t, t_b], dim=1)
-#         out = self.encoder(out)
-#         out = self.resnet(out)
-#         out = self.decoder(out)
-#         return self.last(out)
-
-
 class Generator(nn.Module):
     def __init__(self, in_dim=3):
         super(Generator, self).__init__()
@@ -264,53 +247,6 @@ class Discriminator(nn.Module):
         out = self.conv3(out)
         out = self.conv4(out)
         return self.conv5(out)
-
-
-# class SNDiscriminator(nn.Module):
-#     def __init__(self, in_dim=6):
-#         super(SNDiscriminator, self).__init__()
-#         self.conv1 = nn.Sequential(SpectralNorm(nn.Conv2d(in_dim, 64, kernel_size=3, stride=2, padding=1)),
-#                                    nn.LeakyReLU())
-#         self.conv2 = nn.Sequential(SpectralNorm(nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)),
-#                                    nn.LeakyReLU())
-#         self.conv3 = nn.Sequential(SpectralNorm(nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)),
-#                                    nn.LeakyReLU())
-#         self.conv4 = nn.Sequential(SpectralNorm(nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1)),
-#                                    nn.LeakyReLU())
-#         self.conv5 = nn.Sequential(nn.Conv2d(512, 1, kernel_size=3, stride=1, padding=1),
-#                                    nn.Sigmoid())
-#
-#     def forward(self, x):
-#         out = self.conv1(x)
-#         out = self.conv2(out)
-#         out = self.conv3(out)
-#         out = self.conv4(out)
-#         return self.conv5(out)
-
-
-# class DiscriminatorMixed(nn.Module):
-#     def __init__(self, in_dim1=6, in_dim2=6):
-#         super(DiscriminatorMixed, self).__init__()
-#         self.D1 = Discriminator(in_dim1)
-#         self.D2 = Discriminator(in_dim2)
-#
-#     def forward(self, inputs):
-#         x1, x2 = inputs
-#         o1 = self.D1(x1)
-#         o2 = self.D2(x2)
-#         return o1, o2
-
-
-# def get_vgg_model():
-#     vgg_model = torchvision.models.vgg19()
-#     pre = torch.load(cfg.vgg19_weights)
-#     vgg_model.load_state_dict(pre)
-#     net_list = []
-#     vgg_layers = [1, 6, 11, 20, 29]
-#     for i in range(max(vgg_layers) + 1):
-#         net_list.append(vgg_model.features[i])
-#     net = torch.nn.Sequential(*net_list)
-#     return net
 
 
 class Vgg19(nn.Module):

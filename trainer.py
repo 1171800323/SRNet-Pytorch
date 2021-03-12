@@ -55,6 +55,7 @@ class Trainer:
         inputs = [i_t, i_s]
         labels = [t_sk, t_t, t_b, t_f]
 
+        # ---------------
         # 训练鉴别器
         o_sk, o_t, o_b, o_f = self.G(inputs)
 
@@ -64,6 +65,7 @@ class Trainer:
         i_df_true = torch.cat([t_f, i_t], dim=1)
         i_df_pred = torch.cat([o_f, i_t], dim=1)
 
+        # 计算鉴别器损失
         o_db_true = self.D1(i_db_true)
         o_db_pred = self.D1(i_db_pred)
 
@@ -75,17 +77,21 @@ class Trainer:
         d_loss_detail = [db_loss, df_loss]
         d_loss = torch.add(db_loss, df_loss)
 
+        # 反向传播，更新梯度
         self.reset_grad()
         d_loss.backward()
         self.d1_optimizer.step()
         self.d2_optimizer.step()
 
+        # 学习率衰减
         self.d1_scheduler.step()
         self.d2_scheduler.step()
 
+        # 对鉴别器参数截断
         clip_grad(self.D1)
         clip_grad(self.D2)
 
+        # ---------------
         # 训练生成器
         o_sk, o_t, o_b, o_f = self.G(inputs)
 
@@ -95,6 +101,7 @@ class Trainer:
         o_db_pred = self.D1(i_db_pred)
         o_df_pred = self.D2(i_df_pred)
 
+        # vgg损失
         i_vgg = torch.cat([t_f, o_f], dim=0)
         out_vgg = self.vgg19(i_vgg)
 
@@ -103,10 +110,12 @@ class Trainer:
 
         g_loss, g_loss_detail = build_generator_loss(out_g, out_d, labels, out_vgg)
 
+        # 反向传播，更新梯度
         self.reset_grad()
         g_loss.backward()
         self.g_optimizer.step()
 
+        # 学习率衰减
         self.g_scheduler.step()
 
         return d_loss, g_loss, d_loss_detail, g_loss_detail
@@ -162,7 +171,8 @@ class Trainer:
     def save_checkpoint(self, save_dir):
         os.makedirs(save_dir)
         torch.save(self.G.state_dict(), os.path.join(save_dir, 'G.pth'))
-        torch.save(self.D1.state_dict(), os.path.join(save_dir, 'D_f.pth'))
+        torch.save(self.D1.state_dict(), os.path.join(save_dir, 'D1.pth'))
+        torch.save(self.D2.state_dict(), os.path.join(save_dir, 'D2.pth'))
 
     def predict(self, i_t, i_s, to_shape=None):
         assert i_t.shape == i_s.shape and i_t.dtype == i_s.dtype

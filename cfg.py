@@ -1,8 +1,5 @@
 # device
-gpu = 'cuda:3'
-
-# pretrained vgg
-vgg19_weights = 'model_logs/vgg19/vgg19-dcbb9e9d.pth'
+gpu = 'cuda:0'
 
 # model parameters
 lt = 1.
@@ -37,12 +34,12 @@ tensorboard_dir = 'model_logs/train_logs'
 
 # data
 # 批处理大小
-batch_size = 8
+batch_size = 1
 # 规定训练图片的形状
 data_shape = [64, None]
 # 训练数据地址
-# data_dir = 'D:/Code/DeepLearning/datasets/srnet_data'
-data_dir = '/home/yfx/datasets/srnet_data'
+data_dir = 'D:/Code/DeepLearning/datasets/srnet_data'
+# data_dir = '/home/yfx/datasets/srnet_data'
 data_backup_dir = '/home/yfx/datasets/srnet_data_backup'
 # 风格图像，包括背景和风格文字A
 i_s_dir = 'i_s'

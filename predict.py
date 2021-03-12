@@ -19,7 +19,10 @@ def predict(i_t, i_s, to_shape=None):
     # checkpoint = torch.load("model_logs/checkpoints/G.pth", map_location='cuda:0')
 
     G.load_state_dict(checkpoint)
+
+    # 预测时应该调整为eval模式，否则图像质量非常差
     G.eval()
+
     o_sk, o_t, o_b, o_f = G([i_t.to(device), i_s.to(device)])
 
     o_sk = o_sk.data.cpu()

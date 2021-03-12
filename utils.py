@@ -54,16 +54,6 @@ def save_result(save_dir, result, name, mode):
         cv2.imwrite(os.path.join(save_dir, name + 'o_sk.png'), o_sk, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
         cv2.imwrite(os.path.join(save_dir, name + 'o_t.png'), o_t, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
         cv2.imwrite(os.path.join(save_dir, name + 'o_b.png'), o_b, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-    elif mode == 2:
-        o_sk, o_t = result
-        cv2.imwrite(os.path.join(save_dir, name + 'o_sk.png'), o_sk, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-        cv2.imwrite(os.path.join(save_dir, name + 'o_t.png'), o_t, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-    elif mode == 3:
-        o_b = result
-        cv2.imwrite(os.path.join(save_dir, name + 'o_b.png'), o_b, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-    elif mode == 4:
-        o_f = result
-        cv2.imwrite(os.path.join(save_dir, name + 'o_f.png'), o_f, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
 
 
 def pre_process_img(i_t, i_s, to_shape):

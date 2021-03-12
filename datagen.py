@@ -90,55 +90,6 @@ def srnet_datagen(data_dir=cfg.data_dir):
                t_f_batch.permute(transpose_vector), mask_t_batch.permute(transpose_vector)]
 
 
-# 迭代器，生成训练数据
-def background_inpainting_datagen(data_dir=cfg.data_dir):
-    # 读取所有图片的名字
-    name_list = os.listdir(os.path.join(data_dir, cfg.t_b_dir))
-    random.shuffle(name_list)
-    name_num = len(name_list)
-    idx = 0
-
-    while True:
-        i_s_batch, t_b_batch = [], []
-
-        # 读取小批量数据
-        for _ in range(cfg.batch_size):
-            name = name_list[idx]
-
-            i_s = cv2.imread(os.path.join(cfg.data_dir, cfg.i_s_dir, name))
-            t_b = cv2.imread(os.path.join(cfg.data_dir, cfg.t_b_dir, name))
-
-            i_s_batch.append(i_s)
-            t_b_batch.append(t_b)
-
-            idx = (idx + 1) % name_num
-
-        # 对训练数据统一形状
-        w_sum = 0
-        for t_b in t_b_batch:
-            h, w = t_b.shape[:2]
-            scale_ratio = cfg.data_shape[0] / h
-            w_sum += int(w * scale_ratio)
-
-        to_h = cfg.data_shape[0]
-        to_w = w_sum // cfg.batch_size
-        to_w = int(round(to_w / 8)) * 8
-        to_scale = (to_w, to_h)  # cv2.resize目标尺寸参数是：[w, h]
-        for i in range(cfg.batch_size):
-            i_s_batch[i] = cv2.resize(i_s_batch[i], to_scale)
-            t_b_batch[i] = cv2.resize(t_b_batch[i], to_scale)
-
-        # 调整维度
-        i_s_batch = np.stack(i_s_batch)
-        t_b_batch = np.stack(t_b_batch)
-
-        # 将像素值转换为[-1,1]的值，规范化，并转成Tensor
-        i_s_batch = torch.from_numpy(i_s_batch.astype(np.float32) / 127.5 - 1.)
-        t_b_batch = torch.from_numpy(t_b_batch.astype(np.float32) / 127.5 - 1.)
-
-        yield [i_s_batch.permute(transpose_vector), t_b_batch.permute(transpose_vector)]
-
-
 # 读取输入数据，该数据为测试用例
 def get_input_data(data_dir=cfg.example_data_dir, is_fusion=False):
     data_list = os.listdir(data_dir)
