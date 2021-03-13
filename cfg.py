@@ -58,4 +58,3 @@ t_sk_dir = 't_sk'
 
 example_data_dir = 'examples/labels'
 example_result_dir = 'examples/gen_logs'
-example_fusion_test_dir = 'examples/fusion_test'

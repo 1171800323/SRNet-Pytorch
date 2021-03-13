@@ -7,8 +7,6 @@ from torch.utils.data import Dataset, DataLoader
 
 import cfg
 
-transpose_vector = [0, 3, 1, 2]
-
 
 class datagen_srnet(Dataset):
     def __init__(self):
@@ -85,6 +83,8 @@ def collate_fn(batch):
     t_f_batch = torch.from_numpy(t_f_batch.astype(np.float32) / 127.5 - 1.)
     mask_t_batch = torch.from_numpy(mask_t_batch.astype(np.float32) / 255.)
 
+    transpose_vector = [0, 3, 1, 2]
+
     return [i_t_batch.permute(transpose_vector), i_s_batch.permute(transpose_vector),
             t_sk_batch.permute(transpose_vector),
             t_t_batch.permute(transpose_vector), t_b_batch.permute(transpose_vector),
@@ -97,6 +97,9 @@ def get_input_data(data_dir=cfg.example_data_dir, is_fusion=False):
     data_list = [data_name.split('_')[0] + '_' for data_name in data_list]
     data_list = list(set(data_list))
     res_list = []
+
+    transpose_vector = [0, 3, 1, 2]
+
     for data_name in data_list:
         if is_fusion:
             i_t = cv2.imread(os.path.join(data_dir, data_name + 't_t.png'))
@@ -115,9 +118,34 @@ def get_input_data(data_dir=cfg.example_data_dir, is_fusion=False):
         i_s = cv2.resize(i_s, to_scale).astype(np.float32) / 127.5 - 1
         i_t = torch.from_numpy(np.expand_dims(i_t, axis=0))
         i_s = torch.from_numpy(np.expand_dims(i_s, axis=0))
+
         res_list.append([i_t.permute(transpose_vector), i_s.permute(transpose_vector),
                          (w, h), data_name])  # cv2.resize目标尺寸参数是：[w, h]
     return res_list
+
+
+def pre_process_img(i_t, i_s, to_shape):
+    if len(i_t.shape) == 3:
+        h, w = i_t.shape[:2]
+        if not to_shape:
+            to_shape = (w, h)  # w first for cv2
+        if i_t.shape[0] != cfg.data_shape[0]:
+            ratio = cfg.data_shape[0] / h
+            predict_h = cfg.data_shape[0]
+            predict_w = round(int(w * ratio) / 8) * 8
+            predict_scale = (predict_w, predict_h)  # w first for cv2
+            i_t = cv2.resize(i_t, predict_scale)
+            i_s = cv2.resize(i_s, predict_scale)
+        if i_t.dtype == np.uint8:
+            i_t = i_t.astype(np.float32) / 127.5 - 1
+            i_s = i_s.astype(np.float32) / 127.5 - 1
+        i_t = torch.from_numpy(np.expand_dims(i_t, axis=0))
+        i_s = torch.from_numpy(np.expand_dims(i_s, axis=0))
+
+        transpose_vector = [0, 3, 1, 2]
+        i_t = i_t.permute(transpose_vector)
+        i_s = i_s.permute(transpose_vector)
+    return i_t, i_s, to_shape
 
 
 if __name__ == '__main__':

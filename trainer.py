@@ -1,7 +1,8 @@
+import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from datagen import get_input_data, datagen_srnet, collate_fn
+from datagen import datagen_srnet, collate_fn
 from loss import build_discriminator_loss, build_generator_loss
 from model import Generator, Vgg19, Discriminator
 from utils import *
@@ -26,8 +27,6 @@ class Trainer:
         self.D1 = Discriminator().to(device)
         self.D2 = Discriminator().to(device)
 
-        # self.multi_GPU()
-
         self.g_optimizer = torch.optim.Adam(self.G.parameters(), cfg.learning_rate, (cfg.beta1, cfg.beta2))
         self.d1_optimizer = torch.optim.Adam(self.D1.parameters(), cfg.learning_rate, (cfg.beta1, cfg.beta2))
         self.d2_optimizer = torch.optim.Adam(self.D2.parameters(), cfg.learning_rate, (cfg.beta1, cfg.beta2))
@@ -39,11 +38,6 @@ class Trainer:
         self.d2_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.d2_optimizer,
                                                                    (cfg.decay_rate ** (1 / cfg.decay_steps)))
         self.g_writer, self.d_writer = None, None
-
-    # def multi_GPU(self):
-    #     if torch.cuda.device_count() > 1:
-    #         self.G = torch.nn.DataParallel(self.G, device_ids=[0, 2])
-    #         self.D1 = torch.nn.DataParallel(self.D1, device_ids=[0, 2])
 
     def train_step(self, data):
         i_t, i_s, t_sk, t_t, t_b, t_f, mask_t = data
@@ -60,13 +54,15 @@ class Trainer:
 
         # ---------------
         # 训练鉴别器
+        # 生成器输出的o_b和o_f，需要经过detach()截断梯度流，
+        # 随着真实数据一起传入鉴别器网络，计算鉴别器损失，反向传播梯度，更新鉴别器参数
         o_sk, o_t, o_b, o_f = self.G(inputs)
 
         i_db_true = torch.cat([t_b, i_s], dim=1)
-        i_db_pred = torch.cat([o_b, i_s], dim=1)
+        i_db_pred = torch.cat([o_b.detach(), i_s], dim=1)
 
         i_df_true = torch.cat([t_f, i_t], dim=1)
-        i_df_pred = torch.cat([o_f, i_t], dim=1)
+        i_df_pred = torch.cat([o_f.detach(), i_t], dim=1)
 
         # 计算鉴别器损失
         o_db_true = self.D1(i_db_true)
@@ -81,8 +77,11 @@ class Trainer:
         d_loss = torch.add(db_loss, df_loss)
 
         # 反向传播，更新梯度
-        self.reset_grad()
+        self.d1_optimizer.zero_grad()
+        self.d2_optimizer.zero_grad()
+
         d_loss.backward()
+
         self.d1_optimizer.step()
         self.d2_optimizer.step()
 
@@ -96,8 +95,8 @@ class Trainer:
 
         # ---------------
         # 训练生成器
-        o_sk, o_t, o_b, o_f = self.G(inputs)
-
+        # 将未经过detach()的o_b和o_f输入到鉴别器网络，
+        # 再计算生成器损失，反向传播梯度，更新生成器的参数
         i_db_pred = torch.cat([o_b, i_s], dim=1)
         i_df_pred = torch.cat([o_f, i_t], dim=1)
 
@@ -114,19 +113,16 @@ class Trainer:
         g_loss, g_loss_detail = build_generator_loss(out_g, out_d, labels, out_vgg)
 
         # 反向传播，更新梯度
-        self.reset_grad()
+        self.g_optimizer.zero_grad()
+
         g_loss.backward()
+
         self.g_optimizer.step()
 
         # 学习率衰减
         self.g_scheduler.step()
 
         return d_loss, g_loss, d_loss_detail, g_loss_detail
-
-    def reset_grad(self):
-        self.g_optimizer.zero_grad()
-        self.d1_optimizer.zero_grad()
-        self.d2_optimizer.zero_grad()
 
     def train(self):
         if not cfg.train_name:
@@ -156,19 +152,13 @@ class Trainer:
             if global_step % cfg.write_log_interval == 0:
                 self.write_summary(d_loss, d_loss_detail, g_loss, g_loss_detail, global_step)
 
-            # 生成example
-            if global_step % cfg.gen_example_interval == 0:
-                save_dir = os.path.join(cfg.example_result_dir, train_name,
-                                        'iter-' + str(global_step).zfill(len(str(cfg.max_iter))))
-                self.predict_data_list(save_dir, get_input_data())
-                print_log("example generated in dir {}".format(save_dir), content_color=PrintColor['green'])
-
             # 保存模型
             if global_step % cfg.save_ckpt_interval == 0:
                 save_dir = os.path.join(cfg.checkpoint_save_dir, train_name,
                                         'iter-' + str(global_step).zfill(len(str(cfg.max_iter))))
                 self.save_checkpoint(save_dir)
                 print_log("checkpoint saved in dir {}".format(save_dir), content_color=PrintColor['green'])
+
         print_log('training finished.', content_color=PrintColor['yellow'])
 
     def save_checkpoint(self, save_dir):
@@ -176,38 +166,6 @@ class Trainer:
         torch.save(self.G.state_dict(), os.path.join(save_dir, 'G.pth'))
         torch.save(self.D1.state_dict(), os.path.join(save_dir, 'D1.pth'))
         torch.save(self.D2.state_dict(), os.path.join(save_dir, 'D2.pth'))
-
-    def predict(self, i_t, i_s, to_shape=None):
-        assert i_t.shape == i_s.shape and i_t.dtype == i_s.dtype
-
-        i_t, i_s, to_shape = pre_process_img(i_t, i_s, to_shape)
-
-        with torch.no_grad():
-            o_sk, o_t, o_b, o_f = self.G([i_t.to(device), i_s.to(device)])
-
-            o_sk = o_sk.data.cpu()
-            o_t = o_t.data.cpu()
-            o_b = o_b.data.cpu()
-            o_f = o_f.data.cpu()
-
-            transpose_vector = [0, 2, 3, 1]
-            o_sk = o_sk.permute(transpose_vector).numpy()
-            o_t = o_t.permute(transpose_vector).numpy()
-            o_b = o_b.permute(transpose_vector).numpy()
-            o_f = o_f.permute(transpose_vector).numpy()
-
-            o_sk = cv2.resize((o_sk[0] * 255.).astype(np.uint8), to_shape, interpolation=cv2.INTER_NEAREST)
-            o_t = cv2.resize(((o_t[0] + 1.) * 127.5).astype(np.uint8), to_shape)
-            o_b = cv2.resize(((o_b[0] + 1.) * 127.5).astype(np.uint8), to_shape)
-            o_f = cv2.resize(((o_f[0] + 1.) * 127.5).astype(np.uint8), to_shape)
-
-        return [o_sk, o_t, o_b, o_f]
-
-    def predict_data_list(self, save_dir, input_data_list, mode=1):
-        for data in input_data_list:
-            i_t, i_s, original_shape, data_name = data
-            result = self.predict(i_t, i_s, original_shape)
-            save_result(save_dir, result, data_name, mode=mode)
 
     def write_summary(self, d_loss, d_loss_detail, g_loss, g_loss_detail, step):
         self.d_writer.add_scalar('loss', d_loss, step)
