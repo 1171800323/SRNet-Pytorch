@@ -1,23 +1,23 @@
 import cv2
 import numpy as np
 import torch
+from tqdm import tqdm
 
+import cfg
 from datagen import get_input_data, pre_process_img
 from model import Generator
 from utils import save_result
 
-device = torch.device('cuda:0')
+device = torch.device('cuda:3')
 
 
-def predict(i_t, i_s, to_shape=None):
+def predict(i_t, i_s, to_shape=None, model_path='model_logs/checkpoints/G.pth'):
     i_t, i_s, to_shape = pre_process_img(i_t, i_s, to_shape)
 
     G = Generator().to(device)
 
     # 多GPU机器训练的模型需要做map_location
-    # checkpoint = torch.load("model_logs/checkpoints/G.pth", map_location='cuda:0')
-    checkpoint = torch.load("model_logs/checkpoints/20210310225258/iter-116000/G.pth",
-                            map_location=device)
+    checkpoint = torch.load(model_path, map_location=device)
 
     G.load_state_dict(checkpoint)
 
@@ -45,12 +45,21 @@ def predict(i_t, i_s, to_shape=None):
     return [o_sk, o_t, o_b, o_f]
 
 
-def main():
+def main(date, number):
+    model_path = 'model_logs/checkpoints/{}/iter-{}/G.pth'. \
+        format(date, str(number).zfill(len(str(cfg.max_iter))))
+    save_path = 'examples/results/{}/iter-{}'. \
+        format(date, str(number).zfill(len(str(cfg.max_iter))))
+
     for data in get_input_data():
         i_t, i_s, original_shape, data_name = data
-        result = predict(i_t, i_s, original_shape)
-        save_result("examples/results", result, data_name, mode=1)
+        result = predict(i_t, i_s, original_shape, model_path)
+        save_result(save_path, result, data_name, mode=1)
 
 
 if __name__ == '__main__':
-    main()
+    for i in tqdm(range(0, cfg.max_iter, 1000)):
+        # main('20210310225258', i + 1000)
+        main('20210314141819', i + 1000)
+        if i + 1000 == 24000:
+            break

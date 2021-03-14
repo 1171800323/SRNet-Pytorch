@@ -19,7 +19,7 @@ class Trainer:
     def __init__(self):
         self.data_iter = iter(DataLoader(dataset=datagen_srnet(), batch_size=cfg.batch_size,
                                          shuffle=True, collate_fn=collate_fn, pin_memory=True,
-                                         num_workers=4))
+                                         num_workers=16))
 
         self.vgg19 = Vgg19().to(device)
 
@@ -90,8 +90,8 @@ class Trainer:
         self.d2_scheduler.step()
 
         # 对鉴别器参数截断
-        clip_grad(self.D1)
-        clip_grad(self.D2)
+        # clip_grad(self.D1)
+        # clip_grad(self.D2)
 
         # ---------------
         # 训练生成器

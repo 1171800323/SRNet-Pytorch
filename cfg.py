@@ -1,5 +1,5 @@
 # device
-gpu = 'cuda:0'
+gpu = 'cuda:3'
 
 # model parameters
 lt = 1.
@@ -39,8 +39,8 @@ batch_size = 8
 data_shape = [64, None]
 # 训练数据地址
 # data_dir = 'D:/Code/DeepLearning/datasets/srnet_data'
-# data_dir = '/home/yfx/datasets/srnet_data'
-data_dir = '/home/yfx/datasets/srnet_data_backup'
+data_dir = '/home/yfx/datasets/srnet_data'
+# data_dir = '/home/yfx/datasets/srnet_data_backup'
 # 风格图像，包括背景和风格文字A
 i_s_dir = 'i_s'
 # 内容图像，灰色背景与标准字体的目标文字B

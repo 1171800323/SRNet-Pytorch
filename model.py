@@ -239,7 +239,8 @@ class Discriminator(nn.Module):
                                    nn.BatchNorm2d(512),
                                    nn.LeakyReLU())
         self.conv5 = nn.Sequential(nn.Conv2d(512, 1, kernel_size=3, stride=1, padding=1),
-                                   nn.BatchNorm2d(1))
+                                   nn.BatchNorm2d(1),
+                                   nn.Sigmoid())
 
     def forward(self, x):
         out = self.conv1(x)
