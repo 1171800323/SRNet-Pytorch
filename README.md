@@ -145,18 +145,39 @@ L={\rm E}_{x\sim{p_{data}}(x)}[f_w(x)] - {\rm E}_{x\sim{p_g}(x)}[f_w(x)]
 
 1. 开源Pytorch代码，500k个迭代完成，耗时5.6天，平均每个迭代耗时0.97s.
 
-   <img src="README.assets/image-20210314142020918.png" alt="image-20210314142020918" style="zoom: 67%;" />
+   <img src="README.assets/image-20210314142020918.png" alt="image-20210314142020918" style="zoom: 50%;" />
 
 - 500k次迭代的结果：
 
-  <img src="README.assets/image-20210314144740305.png" alt="image-20210314144740305" style="zoom:80%;" />
+  <img src="README.assets/image-20210314144740305.png" alt="image-20210314144740305" style="zoom: 67%;" />
 
 - 490k次迭代结果：
 
-  <img src="README.assets/image-20210314144909253.png" alt="image-20210314144909253" style="zoom:80%;" />
+  <img src="README.assets/image-20210314144909253.png" alt="image-20210314144909253" style="zoom: 67%;" />
 
 - 401k次迭代结果：
 
-  <img src="README.assets/image-20210314145040351.png" alt="image-20210314145040351" style="zoom:80%;" />
+  <img src="README.assets/image-20210314145040351.png" alt="image-20210314145040351" style="zoom: 67%;" />
 2. 调整`Dataloader`中的`num_works`为16，可以获得0.66s/it的速度，预计3.8天左右可以完成500k个迭代。
 
+3. 由于未使用2中优化，我的代码面临数据读取瓶颈，速度很慢，故在165k次迭代时停止：
+
+   <img src="README.assets/image-20210315143645498.png" alt="image-20210315143645498" style="zoom:50%;" />
+
+# 3.15
+
+1. 未使用WGAN优化：
+
+   <img src="README.assets/image-20210315141340592.png" alt="image-20210315141340592" style="zoom: 67%;" />
+
+   第62k次迭代后的结果：
+
+   <img src="README.assets/image-20210315141734279.png" alt="image-20210315141734279" style="zoom:50%;" />
+
+2. 使用WGAN优化：
+
+   <img src="README.assets/image-20210315141425632.png" alt="image-20210315141425632" style="zoom:67%;" />
+
+   第62k次迭代后的结果：
+
+   <img src="README.assets/image-20210315141701629.png" alt="image-20210315141701629" style="zoom:50%;" />

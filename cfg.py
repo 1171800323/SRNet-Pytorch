@@ -1,5 +1,5 @@
 # device
-gpu = 'cuda:3'
+gpu = 'cuda:0'
 
 # model parameters
 lt = 1.

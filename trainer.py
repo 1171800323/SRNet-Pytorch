@@ -17,9 +17,9 @@ def clip_grad(model):
 
 class Trainer:
     def __init__(self):
-        self.data_iter = iter(DataLoader(dataset=datagen_srnet(), batch_size=cfg.batch_size,
-                                         shuffle=True, collate_fn=collate_fn, pin_memory=True,
-                                         num_workers=16))
+        self.data_loader = DataLoader(dataset=datagen_srnet(), batch_size=cfg.batch_size,
+                                      shuffle=True, collate_fn=collate_fn, pin_memory=True,
+                                      num_workers=16)
 
         self.vgg19 = Vgg19().to(device)
 
@@ -137,10 +137,19 @@ class Trainer:
             self.d_writer = SummaryWriter(os.path.join(cfg.tensorboard_dir, train_name, 'discriminator'))
             self.g_writer = SummaryWriter(os.path.join(cfg.tensorboard_dir, train_name, 'generator'))
 
+        data_iter = iter(self.data_loader)
+
         for step in tqdm(range(cfg.max_iter)):
             global_step = step + 1
-            # 训练、获取损失
-            d_loss, g_loss, d_loss_detail, g_loss_detail = self.train_step(next(self.data_iter))
+
+            # 数据读完后会抛出异常
+            try:
+                data = next(data_iter)
+            except StopIteration:
+                data_iter = iter(self.data_loader)
+                data = next(data_iter)
+
+            d_loss, g_loss, d_loss_detail, g_loss_detail = self.train_step(data)
 
             # 打印loss信息
             if global_step % cfg.show_loss_interval == 0 or step == 0:
@@ -164,8 +173,18 @@ class Trainer:
     def save_checkpoint(self, save_dir):
         os.makedirs(save_dir)
         torch.save(self.G.state_dict(), os.path.join(save_dir, 'G.pth'))
-        torch.save(self.D1.state_dict(), os.path.join(save_dir, 'D1.pth'))
-        torch.save(self.D2.state_dict(), os.path.join(save_dir, 'D2.pth'))
+        torch.save({
+            'D1': self.D1.state_dict(),
+            'D2': self.D2.state_dict()
+        }, os.path.join(save_dir, 'D.pth'))
+        torch.save({
+            'g_optimizer': self.g_optimizer.state_dict(),
+            'd1_optimizer': self.d1_optimizer.state_dict(),
+            'd2_optimizer': self.d2_optimizer.state_dict(),
+            'g_scheduler': self.g_scheduler.state_dict(),
+            'd1_scheduler': self.d1_scheduler.state_dict(),
+            'd2_scheduler': self.d2_scheduler.state_dict()
+        }, os.path.join(save_dir, 'optimizer-scheduler.pth'))
 
     def write_summary(self, d_loss, d_loss_detail, g_loss, g_loss_detail, step):
         self.d_writer.add_scalar('loss', d_loss, step)

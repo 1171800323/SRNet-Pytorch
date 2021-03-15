@@ -11,20 +11,10 @@ from utils import save_result
 device = torch.device('cuda:3')
 
 
-def predict(i_t, i_s, to_shape=None, model_path='model_logs/checkpoints/G.pth'):
+def predict(i_t, i_s, model, to_shape=None):
     i_t, i_s, to_shape = pre_process_img(i_t, i_s, to_shape)
 
-    G = Generator().to(device)
-
-    # 多GPU机器训练的模型需要做map_location
-    checkpoint = torch.load(model_path, map_location=device)
-
-    G.load_state_dict(checkpoint)
-
-    # 预测时应该调整为eval模式，否则图像质量非常差
-    G.eval()
-
-    o_sk, o_t, o_b, o_f = G([i_t.to(device), i_s.to(device)])
+    o_sk, o_t, o_b, o_f = model([i_t.to(device), i_s.to(device)])
 
     o_sk = o_sk.data.cpu()
     o_t = o_t.data.cpu()
@@ -45,21 +35,35 @@ def predict(i_t, i_s, to_shape=None, model_path='model_logs/checkpoints/G.pth'):
     return [o_sk, o_t, o_b, o_f]
 
 
+def load_model(model_path):
+    G = Generator().to(device)
+
+    # 多GPU机器训练的模型需要做map_location
+    checkpoint = torch.load(model_path, map_location=device)
+    G.load_state_dict(checkpoint)
+
+    # 预测时应该调整为eval模式，否则图像质量非常差
+    G.eval()
+    return G
+
+
 def main(date, number):
     model_path = 'model_logs/checkpoints/{}/iter-{}/G.pth'. \
         format(date, str(number).zfill(len(str(cfg.max_iter))))
     save_path = 'examples/results/{}/iter-{}'. \
         format(date, str(number).zfill(len(str(cfg.max_iter))))
 
+    G = load_model(model_path)
+
     for data in get_input_data():
         i_t, i_s, original_shape, data_name = data
-        result = predict(i_t, i_s, original_shape, model_path)
+        result = predict(i_t, i_s, G, original_shape)
         save_result(save_path, result, data_name, mode=1)
 
 
 if __name__ == '__main__':
     for i in tqdm(range(0, cfg.max_iter, 1000)):
         # main('20210310225258', i + 1000)
-        main('20210314141819', i + 1000)
-        if i + 1000 == 24000:
+        main('20210315142514', i + 1000)
+        if i + 1000 == 2000:
             break
