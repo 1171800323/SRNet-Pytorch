@@ -18,8 +18,7 @@ def clip_grad(model):
 class Trainer:
     def __init__(self):
         self.data_loader = DataLoader(dataset=datagen_srnet(), batch_size=cfg.batch_size,
-                                      shuffle=True, collate_fn=collate_fn, pin_memory=True,
-                                      num_workers=16)
+                                      shuffle=True, collate_fn=collate_fn, num_workers=16)
 
         self.vgg19 = Vgg19().to(device)
 
@@ -137,6 +136,8 @@ class Trainer:
             self.d_writer = SummaryWriter(os.path.join(cfg.tensorboard_dir, train_name, 'discriminator'))
             self.g_writer = SummaryWriter(os.path.join(cfg.tensorboard_dir, train_name, 'generator'))
 
+        self.load_checkpoint()
+
         data_iter = iter(self.data_loader)
 
         for step in tqdm(range(cfg.max_iter)):
@@ -154,8 +155,8 @@ class Trainer:
             # 打印loss信息
             if global_step % cfg.show_loss_interval == 0 or step == 0:
                 print_log("step: {:>6d}   d_loss: {:>3.5f}   g_loss: {:>3.5f}".format(global_step, d_loss, g_loss))
-                print('d_loss_detail: ' + str([float('%.4f' % d.data) for d in d_loss_detail]))
-                print('g_loss_detail: ' + str([float('%.4f' % g.data) for g in g_loss_detail]))
+                print('d_loss_detail: ' + str([float('%.5f' % d.data) for d in d_loss_detail]))
+                print('g_loss_detail: ' + str([float('%.5f' % g.data) for g in g_loss_detail]))
 
             # 写tensorboard
             if global_step % cfg.write_log_interval == 0:
@@ -169,6 +170,26 @@ class Trainer:
                 print_log("checkpoint saved in dir {}".format(save_dir), content_color=PrintColor['green'])
 
         print_log('training finished.', content_color=PrintColor['yellow'])
+
+    def load_checkpoint(self):
+        model_path = 'model_logs/checkpoints/20210315142514/iter-062000'
+
+        G_checkpoint = torch.load(os.path.join(model_path, 'G.pth'), map_location=device)
+        D_checkpoint = torch.load(os.path.join(model_path, 'D.pth'), map_location=device)
+        opt_sch_checkpoint = torch.load(os.path.join(model_path, 'optimizer-scheduler.pth'), map_location=device)
+
+        self.G.load_state_dict(G_checkpoint)
+
+        self.D1.load_state_dict(D_checkpoint['D1'])
+        self.D2.load_state_dict(D_checkpoint['D2'])
+
+        self.g_optimizer.load_state_dict(opt_sch_checkpoint['g_optimizer'])
+        self.d1_optimizer.load_state_dict(opt_sch_checkpoint['d1_optimizer'])
+        self.d2_optimizer.load_state_dict(opt_sch_checkpoint['d2_optimizer'])
+
+        self.g_scheduler.load_state_dict(opt_sch_checkpoint['g_scheduler'])
+        self.d1_scheduler.load_state_dict(opt_sch_checkpoint['d1_scheduler'])
+        self.d2_scheduler.load_state_dict(opt_sch_checkpoint['d2_scheduler'])
 
     def save_checkpoint(self, save_dir):
         os.makedirs(save_dir)

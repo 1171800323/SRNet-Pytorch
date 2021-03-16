@@ -64,6 +64,6 @@ def main(date, number):
 if __name__ == '__main__':
     for i in tqdm(range(0, cfg.max_iter, 1000)):
         # main('20210310225258', i + 1000)
-        main('20210315142514', i + 1000)
+        main('20210316145052', i + 1000)
         if i + 1000 == 2000:
             break

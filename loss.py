@@ -33,13 +33,13 @@ def build_gan_loss(x_pred):
 
 
 def build_perceptual_loss(x):
-    l = []
+    loss = []
     for f in x:
-        l.append(build_l1_loss(f[0], f[1]))
-    l = torch.stack(l, dim=0)
-    l = torch.sum(l)
+        loss.append(build_l1_loss(f[0], f[1]))
+    loss = torch.stack(loss, dim=0)
+    loss = torch.sum(loss)
 
-    return l
+    return loss
 
 
 def build_gram_matrix(x):
@@ -52,17 +52,17 @@ def build_gram_matrix(x):
 
 
 def build_style_loss(x):
-    l = []
+    loss = []
     for f in x:
         f_shape = torch.numel(f[0])
         f_norm = 1. / torch.tensor(f_shape, dtype=torch.float32)
         gram_true = build_gram_matrix(f[0])
         gram_pred = build_gram_matrix(f[1])
-        l.append(f_norm * build_l1_loss(gram_true, gram_pred))
-    l = torch.stack(l, dim=0)
-    l = torch.sum(l)
+        loss.append(f_norm * build_l1_loss(gram_true, gram_pred))
+    loss = torch.stack(loss, dim=0)
+    loss = torch.sum(loss)
 
-    return l
+    return loss
 
 
 def build_vgg_loss(x):
